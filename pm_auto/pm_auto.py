@@ -1,4 +1,5 @@
 import time
+import socket
 import threading
 from sf_rpi_status import \
     get_cpu_temperature, \
@@ -175,6 +176,7 @@ class OLEDAuto():
             return
         self._is_ready = self.oled.is_ready()
 
+        self.display_counter = 0
         self.last_ip = ''
         self.ip_index = 0
         self.ip_show_next_timestamp = 0
@@ -285,6 +287,8 @@ class OLEDAuto():
         ips = data['ips']
         ip = 'DISCONNECTED'
 
+        hostname = socket.gethostname().upper()
+
         if len(ips) > 0:
             ip = ips[self.ip_index]
             if time.time() - self.ip_show_next_timestamp > self.ip_show_next_interval:
@@ -318,7 +322,16 @@ class OLEDAuto():
         self.oled.draw_bar_graph_horizontal(disk_percent, *disk_rect.coord(), *disk_rect.size())
         # IP
         self.oled.draw.rectangle((ip_rect.x,ip_rect.y,ip_rect.x+ip_rect.width,ip_rect.height), outline=1, fill=1)
-        self.oled.draw_text(ip, *ip_rect.topcenter(), fill=0, align='center')
+
+        if self.display_counter == 0:
+          self.oled.draw_text(ip, *ip_rect.topcenter(), fill=0, align='center')
+        else:
+          self.oled.draw_text(hostname, *ip_rect.topcenter(), fill=0, align='center')
+
+        self.display_counter = self.display_counter + 1
+
+        if self.display_counter == 5:
+          self.display_counter = 0
 
         # draw the image buffer
         self.oled.display()
